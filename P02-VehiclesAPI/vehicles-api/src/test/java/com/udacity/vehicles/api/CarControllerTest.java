@@ -5,6 +5,7 @@ import com.udacity.vehicles.domain.Location;
 import com.udacity.vehicles.domain.car.Car;
 import com.udacity.vehicles.domain.car.Details;
 import com.udacity.vehicles.domain.manufacturer.Manufacturer;
+import com.udacity.vehicles.service.CarNotFoundException;
 import com.udacity.vehicles.service.CarService;
 import org.junit.Before;
 import org.junit.Test;
@@ -136,6 +137,50 @@ public class CarControllerTest {
                 .andExpect(status().isNoContent());
 
         verify(carService, times(1)).delete(1L);
+    }
+
+    /**
+     * Tests the update of a single car by ID.
+     * @throws Exception if the update operation of a vehicle fails
+     */
+    @Test
+    public void updateCar() throws Exception {
+        final long id = 1L;
+
+        final Car car = getCar();
+        car.setId(id);
+
+        mvc.perform(
+                put(new URI("/cars/" + id))
+                        .content(json.write(car).getJson())
+                        .contentType(MediaType.APPLICATION_JSON_UTF8)
+                        .accept(MediaType.APPLICATION_JSON_UTF8))
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
+                .andExpect(content().json(json.write(car).getJson()));
+
+        verify(carService, times(1)).save(any());
+    }
+
+    /**
+     * Tests the update of a single car by ID.
+     * @throws Exception if the update operation of a vehicle fails
+     */
+    @Test
+    public void updateNotExistentCar() throws Exception {
+        final long id = 2L;
+
+        final Car car = getCar();
+        car.setId(id);
+
+        given(carService.save(any())).willThrow(CarNotFoundException.class);
+
+        mvc.perform(
+                        put(new URI("/cars/" + id))
+                                .content(json.write(car).getJson())
+                                .contentType(MediaType.APPLICATION_JSON_UTF8)
+                                .accept(MediaType.APPLICATION_JSON_UTF8))
+                .andExpect(status().isNotFound());
     }
 
     /**
